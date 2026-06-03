@@ -1,0 +1,27 @@
+{
+  "app": {
+    "[project]/src/app/_not-found/page": [
+      "static/media/e8f2fbee2754df70-s.p.1dqa_6e_ad4sj.woff2",
+      "static/media/ad85ec941b4c8b5c-s.p.0hcpo7hwkj_b3.woff2"
+    ],
+    "[project]/src/app/accountant/page": [
+      "static/media/e8f2fbee2754df70-s.p.1dqa_6e_ad4sj.woff2",
+      "static/media/ad85ec941b4c8b5c-s.p.0hcpo7hwkj_b3.woff2"
+    ],
+    "[project]/src/app/login/page": [
+      "static/media/e8f2fbee2754df70-s.p.1dqa_6e_ad4sj.woff2",
+      "static/media/ad85ec941b4c8b5c-s.p.0hcpo7hwkj_b3.woff2"
+    ],
+    "[project]/src/app/page": [
+      "static/media/e8f2fbee2754df70-s.p.1dqa_6e_ad4sj.woff2",
+      "static/media/ad85ec941b4c8b5c-s.p.0hcpo7hwkj_b3.woff2"
+    ],
+    "[project]/src/app/teacher/page": [
+      "static/media/e8f2fbee2754df70-s.p.1dqa_6e_ad4sj.woff2",
+      "static/media/ad85ec941b4c8b5c-s.p.0hcpo7hwkj_b3.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}
