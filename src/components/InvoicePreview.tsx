@@ -23,7 +23,7 @@ export function InvoicePreview({
               <p>Othukkungal (PO)</p>
               <p>Malappuram</p>
               <p>Kerala - 676531</p>
-              <p>9061711444</p>
+              <p>9061711444, 9061811444, 9061911444</p>
               <p>info1alifonlinemoralschool@gmail.com</p>
               <p>www.alifonlinemoralschool.com</p>
             </div>

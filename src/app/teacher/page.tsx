@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { InvoicePreview } from "@/components/InvoicePreview";
+
 import { supabase } from "@/lib/supabase";
-import { downloadPDF } from "@/lib/pdf";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 
@@ -18,20 +17,65 @@ export default function TeacherEntryPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [recentSubmissions, setRecentSubmissions] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
-  const [activeReceipt, setActiveReceipt] = useState<any>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [classList, setClassList] = useState<string[]>(["KIDS", "PLANETS", "STARS"]);
+  const [defaultTax, setDefaultTax] = useState<number>(18);
   const router = useRouter();
+
+  const fetchClasses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('receipts')
+        .select('payment_details')
+        .eq('student_name', '__SYSTEM_CLASSES__')
+        .maybeSingle();
+
+      if (data && data.payment_details) {
+        const parsed = JSON.parse(data.payment_details);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setClassList(parsed);
+        }
+      }
+    } catch (e) {
+      console.log("No custom classes found, using defaults", e);
+    }
+  };
+
+  const fetchTaxSetting = async () => {
+    try {
+      const { data } = await supabase
+        .from('receipts')
+        .select('payment_details')
+        .eq('student_name', '__SYSTEM_TAX__')
+        .maybeSingle();
+
+      if (data?.payment_details) {
+        const val = parseFloat(data.payment_details);
+        if (!isNaN(val)) {
+          setDefaultTax(val);
+          setItems(prevItems => prevItems.map(item => ({
+            ...item,
+            tax: item.tax === 18 ? val : item.tax
+          })));
+        }
+      }
+    } catch (e) {
+      console.log("No custom tax setting found, using default 18%", e);
+    }
+  };
 
   const [items, setItems] = useState([
     {
       id: Date.now(),
       feeType: "",
       period: "",
+      termFrom: "",
+      termTo: "",
       customDescription: "",
       quantity: 1,
       price: 0,
-      tax: 0,
+      tax: 18,
     },
   ]);
 
@@ -41,6 +85,7 @@ export default function TeacherEntryPage() {
         .from('receipts')
         .select('*, receipt_items(*)')
         .eq('teacher_email', email)
+        .neq('student_name', '__SYSTEM_CLASSES__')
         .order('created_at', { ascending: false })
         .limit(5);
       if (recent) setRecentSubmissions(recent);
@@ -49,6 +94,7 @@ export default function TeacherEntryPage() {
         .from('receipts')
         .select('student_name, student_class, student_phone')
         .eq('teacher_email', email)
+        .neq('student_name', '__SYSTEM_CLASSES__')
         .order('created_at', { ascending: false })
         .limit(200);
       
@@ -61,53 +107,56 @@ export default function TeacherEntryPage() {
     }
   };
 
-  const handleDownloadHistorical = (r: any) => {
-    setActiveReceipt(r);
-    setTimeout(() => {
-      downloadPDF(r.student_name, r.invoice_number, r.student_class, "historicalPreview");
-    }, 500);
+
+  // Shared helper — fetches whole DB + accountant override, returns { prefix, maxNum, nextInvoice }
+  const calcNextInvoice = async () => {
+    const { data, error } = await supabase
+      .from('receipts')
+      .select('invoice_number, student_name, payment_details')
+      .neq('student_name', '__SYSTEM_CLASSES__');
+
+    if (error) throw error;
+
+    let maxNum = 99;
+    let prefix = "B2C";
+
+    (data || []).forEach(r => {
+      // Accountant override row — treat its stored value as the floor
+      if (r.student_name === '__INVOICE_COUNTER__') {
+        const m = r.payment_details?.match(/^([a-zA-Z0-9]+?)(\d+)$/);
+        if (m) {
+          const n = parseInt(m[2], 10);
+          if (n > maxNum) { maxNum = n; prefix = m[1]; }
+        }
+        return;
+      }
+      // Real receipt rows
+      const m = r.invoice_number?.match(/^([a-zA-Z0-9]+?)(\d+)$/);
+      if (m) {
+        const n = parseInt(m[2], 10);
+        if (n > maxNum) { maxNum = n; prefix = m[1]; }
+      }
+    });
+
+    return { prefix, maxNum, nextInvoice: `${prefix}${maxNum + 1}` };
   };
 
   const generateNextInvoiceNumber = async () => {
     try {
-      // Find the receipt with the highest invoice_number
-      // Since it's a string like "B2C100", sorting alphabetically works if prefix is constant and lengths are equal.
-      // But to be safer, we can just get all recent ones and find the max numeric part.
-      const { data, error } = await supabase
-        .from('receipts')
-        .select('invoice_number')
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        let maxNum = 99; // start slightly below 100
-        let prefix = "B2C";
-        
-        data.forEach(r => {
-          const match = r.invoice_number.match(/^([a-zA-Z]+)(\d+)$/);
-          if (match) {
-            prefix = match[1];
-            const num = parseInt(match[2], 10);
-            if (num > maxNum) maxNum = num;
-          }
-        });
-        
-        setInvoiceNumber(`${prefix}${maxNum + 1}`);
-      } else {
-        // Fallback for the very first bill
-        setInvoiceNumber("B2C100");
-      }
+      const { nextInvoice } = await calcNextInvoice();
+      setInvoiceNumber(nextInvoice);
     } catch (err) {
       console.error("Error generating invoice number:", err);
-      setInvoiceNumber("B2C" + Math.floor(100 + Math.random() * 900));
+      setInvoiceNumber("B2C100");
     }
   };
+
 
   useEffect(() => {
     setInvoiceDate(new Date().toISOString().split("T")[0]);
     generateNextInvoiceNumber();
+    fetchClasses();
+    fetchTaxSetting();
     
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
@@ -125,7 +174,7 @@ export default function TeacherEntryPage() {
   const handleAddItem = () => {
     setItems([
       ...items,
-      { id: Date.now(), feeType: "", period: "", customDescription: "", quantity: 1, price: 0, tax: 0 },
+      { id: Date.now(), feeType: "", period: "", termFrom: "", termTo: "", customDescription: "", quantity: 1, price: 0, tax: defaultTax },
     ]);
   };
 
@@ -140,6 +189,8 @@ export default function TeacherEntryPage() {
           const newItem = { ...item, [field]: value };
           if (field === "feeType") {
              newItem.period = "";
+             newItem.termFrom = "";
+             newItem.termTo = "";
              newItem.customDescription = "";
           }
           return newItem;
@@ -160,16 +211,18 @@ export default function TeacherEntryPage() {
     let description = item.feeType || "Item";
     if (item.feeType === "Other Fee" && item.customDescription) {
       description = item.customDescription;
-    } else if (item.period && (item.feeType === "Monthly Fee" || item.feeType === "Term Fee")) {
+    } else if (item.feeType === "Term Fee" && item.termFrom && item.termTo) {
+      description = `Term Fee - ${item.termFrom} to ${item.termTo}`;
+    } else if (item.feeType === "Term Fee" && item.termFrom) {
+      description = `Term Fee - From ${item.termFrom}`;
+    } else if (item.period && item.feeType === "Monthly Fee") {
       description = `${item.feeType} - ${item.period}`;
     }
     return { ...item, description: description.toUpperCase(), subtotal, taxAmount, total, q, p, t };
   }).filter(i => (i.feeType || i.p > 0) && i.q > 0);
 
   const grandTotal = derivedItems.reduce((sum, item) => sum + item.total, 0);
-  const formattedDate = invoiceDate ? new Date(invoiceDate).toLocaleDateString("en-GB", {
-    day: "2-digit", month: "2-digit", year: "numeric"
-  }) : "";
+
 
   const handleStudentNameChange = (val: string) => {
     setStudentName(val);
@@ -198,11 +251,14 @@ export default function TeacherEntryPage() {
     
     setIsSubmitting(true);
     try {
-      // 1. Insert Receipt
+      // 1. Fetch latest invoice numbers dynamically right before saving (includes accountant override)
+      const { prefix, maxNum, nextInvoice: finalInvoiceNumber } = await calcNextInvoice();
+
+      // 2. Insert Receipt
       const { data: receiptData, error: receiptError } = await supabase
         .from('receipts')
         .insert({
-          invoice_number: invoiceNumber,
+          invoice_number: finalInvoiceNumber,
           creation_date: invoiceDate,
           student_name: studentName,
           student_class: studentClass,
@@ -218,11 +274,11 @@ export default function TeacherEntryPage() {
         
       if (receiptError) throw receiptError;
       
-      // 2. Insert Items
+      // 3. Insert Items
       const itemsToInsert = derivedItems.map(item => ({
         receipt_id: receiptData.id,
         fee_type: item.feeType,
-        period: item.period,
+        period: item.period || (item.feeType === "Term Fee" ? `${item.termFrom} to ${item.termTo}` : ""),
         custom_description: item.customDescription,
         quantity: item.q,
         price: item.p,
@@ -236,15 +292,21 @@ export default function TeacherEntryPage() {
         
       if (itemsError) throw itemsError;
       
-      Swal.fire({ title: 'Success!', text: 'Receipt saved successfully!', icon: 'success', timer: 2000, showConfirmButton: false });
+      Swal.fire({ 
+        title: 'Success!', 
+        text: `Receipt ${finalInvoiceNumber} saved successfully!`, 
+        icon: 'success', 
+        timer: 2000, 
+        showConfirmButton: false 
+      });
       
-      // Reset form (or generate new invoice number)
+      // Reset form
       setStudentName("");
       setStudentClass("");
       setStudentPhone("");
       setPaymentDetails("");
-      await generateNextInvoiceNumber();
-      setItems([{ id: Date.now(), feeType: "", period: "", customDescription: "", quantity: 1, price: 0, tax: 0 }]);
+      setInvoiceNumber(`${prefix}${maxNum + 2}`); // optimistic next
+      setItems([{ id: Date.now(), feeType: "", period: "", termFrom: "", termTo: "", customDescription: "", quantity: 1, price: 0, tax: 0 }]);
       if (userEmail) fetchRecentData(userEmail);
       
     } catch (err: any) {
@@ -261,30 +323,124 @@ export default function TeacherEntryPage() {
   };
 
   return (
-    <>
-      <button 
-        onClick={handleLogout}
-        className="btn-danger"
-        style={{ position: "absolute", top: "20px", left: "20px", zIndex: 100 }}
-      >
-        Logout
-      </button>
-      <div className="container">
-        {/* Form Section */}
-        <div className="form-section">
-          <h1>Teacher Data Entry</h1>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)" }}>
+
+      {/* ── Branded Header ── */}
+      <header style={{
+        position: "sticky", top: 0, zIndex: 200,
+        background: "rgba(15, 32, 39, 0.95)",
+        backdropFilter: "blur(16px)",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        padding: "0 32px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        height: "70px",
+        boxShadow: "0 4px 30px rgba(0,0,0,0.3)"
+      }}>
+        {/* Left: Brand */}
+        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <img 
+            src="/logo.png" 
+            alt="Alif Logo" 
+            style={{
+              width: "44px",
+              height: "44px",
+              objectFit: "contain",
+              flexShrink: 0,
+              filter: "drop-shadow(0 2px 8px rgba(188,163,127,0.3))"
+            }}
+            onError={(e) => {
+              // fallback if logo fails
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+          <div>
+            <div style={{ color: "#EAD7BB", fontWeight: 800, fontSize: "17px", letterSpacing: "0.5px", lineHeight: 1.1 }}>
+              ALIF Online Madrassa
+            </div>
+            <div style={{ color: "rgba(234,215,187,0.55)", fontSize: "11px", fontWeight: 500, letterSpacing: "1.5px", textTransform: "uppercase" }}>
+              Fee Receipt Portal
+            </div>
+          </div>
+        </div>
+
+
+        {/* Center: Page title */}
+        <div style={{ color: "rgba(255,255,255,0.7)", fontSize: "13px", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase" }}>
+          Teacher&nbsp;Data&nbsp;Entry
+        </div>
+
+        {/* Right: Teacher badge + Logout */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {userEmail && (
+            <div style={{
+              background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: "20px", padding: "6px 14px",
+              color: "rgba(234,215,187,0.85)", fontSize: "12px", fontWeight: 600,
+              display: "flex", alignItems: "center", gap: "7px"
+            }}>
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#2ecc71", display: "inline-block", boxShadow: "0 0 6px #2ecc71" }} />
+              {userEmail}
+            </div>
+          )}
+          <button
+            onClick={handleLogout}
+            style={{
+              background: "rgba(255,71,87,0.15)", border: "1px solid rgba(255,71,87,0.35)",
+              color: "#ff6b6b", borderRadius: "10px", padding: "8px 18px",
+              fontWeight: 700, fontSize: "13px", cursor: "pointer",
+              transition: "all 0.2s ease"
+            }}
+            onMouseEnter={e => { (e.target as HTMLButtonElement).style.background = "rgba(255,71,87,0.3)"; }}
+            onMouseLeave={e => { (e.target as HTMLButtonElement).style.background = "rgba(255,71,87,0.15)"; }}
+          >
+            Logout
+          </button>
+        </div>
+      </header>
+
+      {/* ── Main Content ── */}
+      <div style={{ maxWidth: "860px", margin: "0 auto", padding: "36px 20px 60px" }}>
+
+        {/* Page heading strip */}
+        <div style={{ textAlign: "center", marginBottom: "32px" }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: "10px",
+            background: "rgba(188,163,127,0.15)", border: "1px solid rgba(188,163,127,0.3)",
+            borderRadius: "30px", padding: "8px 22px", marginBottom: "14px"
+          }}>
+            <span style={{ color: "#BCA37F", fontSize: "13px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase" }}>
+              📋 New Fee Receipt
+            </span>
+          </div>
+          <div style={{ color: "rgba(255,255,255,0.4)", fontSize: "13px" }}>
+            Fill in the details below — invoice number is assigned automatically
+          </div>
+        </div>
+
+        {/* Card wrapper */}
+        <div style={{
+          background: "rgba(255,255,255,0.97)",
+          borderRadius: "24px",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
+          overflow: "hidden"
+        }}>
+          {/* Card header accent */}
+          <div style={{ height: "5px", background: "linear-gradient(90deg, #113946, #BCA37F, #EAD7BB)" }} />
+
+          <div style={{ padding: "40px" }}>
+
 
           {/* Invoice Details */}
           <div className="form-group">
             <h3>Invoice Details</h3>
             <div className="form-row">
               <div className="form-field">
-                <label>Invoice Number:</label>
+                <label>Invoice Number: <span style={{ fontSize: "11px", color: "#888", fontWeight: 400 }}>(auto)</span></label>
                 <input
                   type="text"
-                  placeholder="BC3952"
                   value={invoiceNumber}
-                  onChange={(e) => setInvoiceNumber(e.target.value)}
+                  readOnly
+                  style={{ background: "#f0f4ff", cursor: "not-allowed", color: "#3366FF", fontWeight: 700, letterSpacing: "1px" }}
                 />
               </div>
               <div className="form-field">
@@ -318,13 +474,25 @@ export default function TeacherEntryPage() {
                 </datalist>
               </div>
               <div className="form-field">
-                <label>Class/Section (e.g. PLANETS):</label>
-                <input
-                  type="text"
-                  placeholder="CLASS NAME"
+                <label>Class/Section:</label>
+                <select
                   value={studentClass}
                   onChange={(e) => setStudentClass(e.target.value)}
-                />
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: "1px solid #ccc",
+                    background: "white",
+                    height: "42px",
+                    fontSize: "14px"
+                  }}
+                >
+                  <option value="">Select Class</option>
+                  {classList.map((cls, idx) => (
+                    <option key={idx} value={cls}>{cls}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="form-row">
@@ -388,19 +556,51 @@ export default function TeacherEntryPage() {
                   )}
 
                   {item.feeType === "Term Fee" && (
-                    <div className="item-field period-field">
-                      <label className="period-label">Terms:</label>
-                      <select
-                        className="item-period"
-                        value={item.period}
-                        onChange={(e) => handleItemChange(item.id, "period", e.target.value)}
-                      >
-                        <option value="">Select Term</option>
-                        <option value="1st Term">1st Term</option>
-                        <option value="2nd Term">2nd Term</option>
-                        <option value="3rd Term">3rd Term</option>
-                        <option value="4th Term">4th Term</option>
-                      </select>
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
+                      <div className="item-field period-field">
+                        <label className="period-label">From Month:</label>
+                        <select
+                          className="item-period"
+                          value={item.termFrom}
+                          onChange={(e) => handleItemChange(item.id, "termFrom", e.target.value)}
+                        >
+                          <option value="">Select Month</option>
+                          <option value="January">January</option>
+                          <option value="February">February</option>
+                          <option value="March">March</option>
+                          <option value="April">April</option>
+                          <option value="May">May</option>
+                          <option value="June">June</option>
+                          <option value="July">July</option>
+                          <option value="August">August</option>
+                          <option value="September">September</option>
+                          <option value="October">October</option>
+                          <option value="November">November</option>
+                          <option value="December">December</option>
+                        </select>
+                      </div>
+                      <div className="item-field period-field">
+                        <label className="period-label">To Month:</label>
+                        <select
+                          className="item-period"
+                          value={item.termTo}
+                          onChange={(e) => handleItemChange(item.id, "termTo", e.target.value)}
+                        >
+                          <option value="">Select Month</option>
+                          <option value="January">January</option>
+                          <option value="February">February</option>
+                          <option value="March">March</option>
+                          <option value="April">April</option>
+                          <option value="May">May</option>
+                          <option value="June">June</option>
+                          <option value="July">July</option>
+                          <option value="August">August</option>
+                          <option value="September">September</option>
+                          <option value="October">October</option>
+                          <option value="November">November</option>
+                          <option value="December">December</option>
+                        </select>
+                      </div>
                     </div>
                   )}
 
@@ -505,13 +705,7 @@ export default function TeacherEntryPage() {
             >
               {isSubmitting ? "Saving..." : "Save to Database"}
             </button>
-            <button 
-              type="button" 
-              className="btn-primary responsive-full-width-btn"
-              onClick={() => downloadPDF(studentName, invoiceNumber, studentClass)}
-            >
-              Download PDF
-            </button>
+
             <button 
               type="button" 
               className="btn-primary responsive-full-width-btn"
@@ -535,7 +729,7 @@ export default function TeacherEntryPage() {
                     <th style={{ padding: "10px", borderBottom: "1.5px solid #E0E3EB", color: "#113946" }}>Name</th>
                     <th style={{ padding: "10px", borderBottom: "1.5px solid #E0E3EB", color: "#113946" }}>Class</th>
                     <th style={{ padding: "10px", borderBottom: "1.5px solid #E0E3EB", color: "#113946" }}>Total</th>
-                    <th style={{ padding: "10px", borderBottom: "1.5px solid #E0E3EB", color: "#113946" }}>Action</th>
+
                   </tr>
                 </thead>
                 <tbody>
@@ -545,66 +739,16 @@ export default function TeacherEntryPage() {
                       <td style={{ padding: "10px", fontWeight: "bold", color: "#113946" }}>{r.student_name}</td>
                       <td style={{ padding: "10px" }}>{r.student_class}</td>
                       <td style={{ padding: "10px", fontWeight: "bold" }}>₹{Number(r.grand_total).toFixed(2)}</td>
-                      <td style={{ padding: "10px" }}>
-                        <button 
-                          onClick={() => handleDownloadHistorical(r)}
-                          className="btn-primary btn-action-small"
-                        >
-                          Download
-                        </button>
-                      </td>
+
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
           </div>
-        </div>
-
-        {/* Preview Section - Readonly for teacher to review */}
-        <div className="preview-section" style={{ opacity: 0.9 }}>
-          <h3 style={{ textAlign: "center", marginBottom: "15px" }}>Live Preview</h3>
-          <InvoicePreview 
-            studentName={studentName}
-            studentClass={studentClass}
-            studentPhone={studentPhone}
-            invoiceNumber={invoiceNumber}
-            formattedDate={formattedDate}
-            derivedItems={derivedItems}
-            grandTotal={grandTotal}
-            paymentMethod={paymentMethod}
-            paymentDetails={paymentDetails}
-          />
+          </div>
         </div>
       </div>
-      
-      {/* Hidden container for rendering the active historical receipt for PDF generation */}
-      {activeReceipt && (
-        <div style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
-          <InvoicePreview 
-            id="historicalPreview"
-            studentName={activeReceipt.student_name}
-            studentClass={activeReceipt.student_class}
-            studentPhone={activeReceipt.student_phone}
-            invoiceNumber={activeReceipt.invoice_number}
-            formattedDate={activeReceipt.creation_date}
-            derivedItems={activeReceipt.receipt_items?.map((item: any) => ({
-              ...item,
-              description: item.fee_type === 'Other Fee' && item.custom_description 
-                ? item.custom_description.toUpperCase()
-                : item.period 
-                  ? `${item.fee_type} - ${item.period}`.toUpperCase()
-                  : item.fee_type.toUpperCase(),
-              q: item.quantity,
-              p: item.price,
-              t: item.tax
-            })) || []}
-            grandTotal={activeReceipt.grand_total}
-            paymentMethod={activeReceipt.payment_method}
-            paymentDetails={activeReceipt.payment_details}
-          />
-        </div>
-      )}
-    </>
+    </div>
   );
 }

@@ -60,3 +60,41 @@ export const downloadPDF = (studentName: string, invoiceNumber: string, studentC
     }
   }, 100);
 };
+
+export const getPDFBlob = (elementId: string): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const element = document.getElementById(elementId);
+    if (!element) {
+      reject(new Error(`PDF Error: Could not find element with id ${elementId}`));
+      return;
+    }
+    const opt = {
+      margin: [0.1, 0.1, 0.1, 0.1],
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        windowHeight: element?.scrollHeight || 1000,
+        scrollY: 0,
+        scrollX: 0,
+      },
+      jsPDF: {
+        unit: "in",
+        format: "a4",
+        orientation: "portrait",
+      },
+    };
+    // @ts-ignore
+    if (window.html2pdf) {
+      // @ts-ignore
+      window.html2pdf().set(opt).from(element).output('blob').then((blob: Blob) => {
+        resolve(blob);
+      }).catch((err: any) => {
+        reject(err);
+      });
+    } else {
+      reject(new Error("PDF Generator is still loading."));
+    }
+  });
+};

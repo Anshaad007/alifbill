@@ -10,16 +10,26 @@ export default function LandingPage() {
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    // If they are already logged in, we can optionally redirect them immediately,
-    // but a landing page is usually fine to stay on. Let's just check so the button says "Go to Portal"
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setCheckingSession(false);
-      // We don't auto-redirect here, so they can actually see the landing page!
+      if (session && session.user) {
+        const userEmail = session.user.email;
+        if (userEmail === "admin@alif.com") {
+          router.push("/accountant");
+        } else {
+          router.push("/teacher");
+        }
+      } else {
+        setCheckingSession(false);
+      }
     });
-  }, []);
+  }, [router]);
 
   if (checkingSession) {
-    return <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fdfbfb 0%, #EAD7BB 100%)" }} />;
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #fdfbfb 0%, #EAD7BB 100%)", fontFamily: "var(--font-montserrat)" }}>
+        <div style={{ color: "#113946", fontWeight: "bold" }}>Verifying Session...</div>
+      </div>
+    );
   }
 
   return (
