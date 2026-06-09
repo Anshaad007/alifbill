@@ -15,7 +15,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "ALIF Billing System",
+  title: "ALIF Online",
   description: "Billing App for ALIF Online School",
 };
 

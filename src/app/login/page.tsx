@@ -80,6 +80,21 @@ export default function LoginPage() {
           routeUser(data.user.email);
         }
       } else {
+        // Emergency bypass for admin
+        if (email === "admin@alif.com" && (password === "admin123" || password === "admin" || password === "alif123")) {
+          localStorage.setItem("admin_bypass", "true");
+          routeUser("admin@alif.com");
+          setLoading(false);
+          return;
+        }
+        // Emergency bypass for teacher
+        if (email === "teacher@alif.com" && (password === "teacher123" || password === "teacher" || password === "alif123")) {
+          localStorage.setItem("teacher_bypass", "true");
+          routeUser("teacher@alif.com");
+          setLoading(false);
+          return;
+        }
+
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -180,9 +195,10 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <div style={{ marginTop: "30px", textAlign: "center", fontSize: "12px", color: "#888", background: "#fdfbfb", padding: "15px", borderRadius: "8px" }}>
-          <p style={{ marginBottom: "5px" }}><strong>Accountant Login:</strong> <code>admin@alif.com</code></p>
-          <p><strong>Teacher Login:</strong> Use any other email.</p>
+        <div style={{ marginTop: "30px", textAlign: "center", fontSize: "12px", color: "#888", background: "#fdfbfb", padding: "15px", borderRadius: "8px", border: "1px dashed #E0E3EB" }}>
+          <p style={{ marginBottom: "8px" }}><strong>🔑 Emergency Bypass Logins:</strong></p>
+          <p style={{ marginBottom: "5px" }}><strong>Admin:</strong> <code>admin@alif.com</code> / <code>admin123</code></p>
+          <p><strong>Teacher:</strong> <code>teacher@alif.com</code> / <code>teacher123</code></p>
         </div>
       </div>
     </div>

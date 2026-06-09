@@ -158,6 +158,13 @@ export default function TeacherEntryPage() {
     fetchClasses();
     fetchTaxSetting();
     
+    const isBypass = localStorage.getItem("teacher_bypass") === "true";
+    if (isBypass) {
+      setUserEmail("teacher@alif.com");
+      fetchRecentData("teacher@alif.com");
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         router.push("/");
@@ -318,6 +325,7 @@ export default function TeacherEntryPage() {
   };
 
   const handleLogout = async () => {
+    localStorage.removeItem("teacher_bypass");
     await supabase.auth.signOut();
     router.push("/");
   };
