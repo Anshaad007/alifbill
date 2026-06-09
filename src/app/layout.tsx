@@ -15,7 +15,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Invoice Generator",
+  title: "ALIF Billing System",
   description: "Billing App for ALIF Online School",
 };
 
@@ -29,9 +29,10 @@ export default function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0ea5e9" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <link rel="apple-touch-icon" href="/logo.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" async></script>
         <script
           dangerouslySetInnerHTML={{

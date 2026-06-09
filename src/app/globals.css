@@ -858,6 +858,20 @@ table.invoice-table td {
     }
 }
 
+/* ── Dashboard Base Header & Toolbar ── */
+.dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 70px;
+}
+
+.quick-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 /* 📱 Global Mobile Responsiveness Helper Classes */
 @media (max-width: 768px) {
     /* Base Overrides */
@@ -931,17 +945,66 @@ table.invoice-table td {
 
     /* Dashboard Header Mobile Fixes */
     .dashboard-header {
-        height: auto !important;
-        min-height: 70px;
-        padding: 12px 16px !important;
-        flex-direction: column !important;
-        gap: 12px !important;
-        align-items: stretch !important;
-        text-align: center !important;
+        height: 64px !important;
+        min-height: 64px !important;
+        padding: 0 12px !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 0 !important;
     }
+    
+    .dashboard-header-title {
+        display: none !important;
+    }
+
+    .brand-title {
+        font-size: 13px !important;
+        font-weight: 800 !important;
+    }
+    
+    .brand-subtitle {
+        display: none !important;
+    }
+
+    .user-badge {
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+        border-radius: 12px !important;
+        gap: 4px !important;
+    }
+    
+    .user-badge-text {
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
+    }
+
+    .btn-logout-compact {
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+        border-radius: 8px !important;
+    }
+
+    .btn-analytics-compact {
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+        border-radius: 8px !important;
+    }
+
     .dashboard-header > div {
-        justify-content: center !important;
-        flex-wrap: wrap !important;
+        display: flex;
+        align-items: center !important;
+    }
+    .dashboard-header > div:first-child {
+        flex-direction: row !important;
+        gap: 8px !important;
+    }
+    .dashboard-header > div:last-child {
+        flex-direction: row !important;
+        gap: 8px !important;
     }
 
     /* Action Toolbar Mobile Fixes */

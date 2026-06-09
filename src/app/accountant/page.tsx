@@ -962,10 +962,10 @@ export default function AccountantDashboard() {
             }}
           />
           <div>
-            <div style={{ color: "#EAD7BB", fontWeight: 800, fontSize: "17px", letterSpacing: "0.5px", lineHeight: 1.1 }}>
+            <div className="brand-title" style={{ color: "#EAD7BB", fontWeight: 800, fontSize: "17px", letterSpacing: "0.5px", lineHeight: 1.1 }}>
               ALIF Online Madrassa
             </div>
-            <div style={{ color: "rgba(234,215,187,0.55)", fontSize: "11px", fontWeight: 500, letterSpacing: "1.5px", textTransform: "uppercase" }}>
+            <div className="brand-subtitle" style={{ color: "rgba(234,215,187,0.55)", fontSize: "11px", fontWeight: 500, letterSpacing: "1.5px", textTransform: "uppercase" }}>
               Accountant Dashboard
             </div>
           </div>
@@ -975,6 +975,7 @@ export default function AccountantDashboard() {
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <button
             onClick={() => setShowAnalyticsModal(true)}
+            className="btn-analytics-compact"
             style={{
               background: "rgba(51, 102, 255, 0.2)",
               border: "1px solid rgba(51, 102, 255, 0.4)",
@@ -996,18 +997,19 @@ export default function AccountantDashboard() {
           </button>
 
           {userEmail && (
-            <div style={{
+            <div className="user-badge" style={{
               background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)",
               borderRadius: "20px", padding: "6px 14px",
               color: "rgba(234,215,187,0.85)", fontSize: "12px", fontWeight: 600,
               display: "flex", alignItems: "center", gap: "7px"
             }}>
               <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#2ecc71", display: "inline-block", boxShadow: "0 0 6px #2ecc71" }} />
-              {userEmail}
+              <span className="user-badge-text">{userEmail}</span>
             </div>
           )}
           <button
             onClick={handleLogout}
+            className="btn-logout-compact"
             style={{
               background: "rgba(255,71,87,0.15)", border: "1px solid rgba(255,71,87,0.35)",
               color: "#ff6b6b", borderRadius: "10px", padding: "8px 18px",
