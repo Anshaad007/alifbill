@@ -326,14 +326,12 @@ export default function TeacherEntryPage() {
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)" }}>
 
       {/* ── Branded Header ── */}
-      <header style={{
+      <header className="dashboard-header" style={{
         position: "sticky", top: 0, zIndex: 200,
         background: "rgba(15, 32, 39, 0.95)",
         backdropFilter: "blur(16px)",
         borderBottom: "1px solid rgba(255,255,255,0.08)",
         padding: "0 32px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        height: "70px",
         boxShadow: "0 4px 30px rgba(0,0,0,0.3)"
       }}>
         {/* Left: Brand */}
@@ -427,7 +425,7 @@ export default function TeacherEntryPage() {
           {/* Card header accent */}
           <div style={{ height: "5px", background: "linear-gradient(90deg, #113946, #BCA37F, #EAD7BB)" }} />
 
-          <div style={{ padding: "40px" }}>
+          <div className="responsive-padding" style={{ padding: "40px" }}>
 
 
           {/* Invoice Details */}

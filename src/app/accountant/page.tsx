@@ -937,14 +937,12 @@ export default function AccountantDashboard() {
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)", paddingBottom: "60px", fontFamily: "var(--font-montserrat)" }}>
       
       {/* ── Branded Header ── */}
-      <header style={{
+      <header className="dashboard-header" style={{
         position: "sticky", top: 0, zIndex: 200,
         background: "rgba(15, 32, 39, 0.95)",
         backdropFilter: "blur(16px)",
         borderBottom: "1px solid rgba(255,255,255,0.08)",
         padding: "0 32px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        height: "70px",
         boxShadow: "0 4px 30px rgba(0,0,0,0.3)"
       }}>
         {/* Left: Brand */}
@@ -1355,85 +1353,87 @@ export default function AccountantDashboard() {
         ) : receipts.length === 0 ? (
           <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px", margin: 0 }}>No receipts found.</p>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", color: "#fff" }}>
-            <thead>
-              <tr style={{ background: "rgba(0, 0, 0, 0.35)", textAlign: "left" }}>
-                <th style={{ padding: "14px 16px", borderBottom: "2px solid rgba(255,255,255,0.1)", color: "#EAD7BB", fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>Invoice #</th>
-                <th style={{ padding: "14px 16px", borderBottom: "2px solid rgba(255,255,255,0.1)", color: "#EAD7BB", fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>Date</th>
-                <th style={{ padding: "14px 16px", borderBottom: "2px solid rgba(255,255,255,0.1)", color: "#EAD7BB", fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>Student Name</th>
-                <th style={{ padding: "14px 16px", borderBottom: "2px solid rgba(255,255,255,0.1)", color: "#EAD7BB", fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>Class</th>
-                <th style={{ padding: "14px 16px", borderBottom: "2px solid rgba(255,255,255,0.1)", color: "#EAD7BB", fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>Total</th>
-                <th style={{ padding: "14px 16px", borderBottom: "2px solid rgba(255,255,255,0.1)", color: "#EAD7BB", fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>Status</th>
-                <th style={{ padding: "14px 16px", borderBottom: "2px solid rgba(255,255,255,0.1)", color: "#EAD7BB", fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {receipts.map((r, i) => (
-                <tr key={i} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)", transition: "background 0.2s" }} onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "rgba(255,255,255,0.02)"; }} onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent"; }}>
-                  <td style={{ padding: "14px 16px", color: "rgba(255,255,255,0.9)" }}>{r.invoice_number}</td>
-                  <td style={{ padding: "14px 16px", color: "rgba(255,255,255,0.75)" }}>{formatDate(r.creation_date)}</td>
-                  <td style={{ padding: "14px 16px", fontWeight: "bold", color: "#ffffff" }}>{r.student_name}</td>
-                  <td style={{ padding: "14px 16px", color: "rgba(255,255,255,0.75)" }}>{r.student_class}</td>
-                  <td style={{ padding: "14px 16px", fontWeight: "bold", color: "#00F5D4" }}>₹{Number(r.grand_total).toFixed(2)}</td>
-                  <td style={{ padding: "14px 16px" }}>
-                    <select 
-                      value={r.status || 'Pending'}
-                      onChange={(e) => handleStatusChange(r.id, e.target.value)}
-                      style={{ 
-                        padding: "6px 12px", 
-                        borderRadius: "8px", 
-                        outline: "none",
-                        fontSize: "12px",
-                        border: r.status === 'Verified' ? '1px solid rgba(39, 174, 96, 0.45)' : r.status === 'Disputed' ? '1px solid rgba(255, 107, 107, 0.45)' : '1px solid rgba(243, 156, 18, 0.45)',
-                        background: r.status === 'Verified' ? 'rgba(39, 174, 96, 0.2)' : r.status === 'Disputed' ? 'rgba(255, 107, 107, 0.2)' : 'rgba(243, 156, 18, 0.2)',
-                        color: r.status === 'Verified' ? '#2ecc71' : r.status === 'Disputed' ? '#ff6b6b' : '#f1c40f',
-                        fontWeight: "bold",
-                        cursor: "pointer"
-                      }}
-                    >
-                      <option value="Pending" style={{ background: "#113946", color: "#fff" }}>Pending</option>
-                      <option value="Verified" style={{ background: "#113946", color: "#fff" }}>Verified</option>
-                      <option value="Disputed" style={{ background: "#113946", color: "#fff" }}>Disputed</option>
-                    </select>
-                  </td>
-                  <td style={{ padding: "14px 16px", display: "flex", gap: "8px" }}>
-                    <button 
-                      onClick={() => setPreviewModalReceipt(r)}
-                      className="btn-warning btn-action-small"
-                      title="Preview"
-                      style={{ borderRadius: "6px" }}
-                    >
-                      👁️
-                    </button>
-                    <button 
-                      onClick={() => handleDownloadSingle(r)}
-                      className="btn-primary btn-action-small"
-                      title="Download PDF"
-                      style={{ borderRadius: "6px" }}
-                    >
-                      📄
-                    </button>
-                    <button 
-                      onClick={() => setEditReceipt({...r})}
-                      className="btn-success btn-action-small"
-                      title="Edit Basic Info"
-                      style={{ borderRadius: "6px" }}
-                    >
-                      ✏️
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(r.id)}
-                      className="btn-danger btn-action-small"
-                      title="Delete"
-                      style={{ borderRadius: "6px" }}
-                    >
-                      🗑️
-                    </button>
-                  </td>
+          <div className="table-container">
+            <table style={{ width: "100%", borderCollapse: "collapse", color: "#fff" }}>
+              <thead>
+                <tr style={{ background: "rgba(0, 0, 0, 0.35)", textAlign: "left" }}>
+                  <th style={{ padding: "14px 16px", borderBottom: "2px solid rgba(255,255,255,0.1)", color: "#EAD7BB", fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>Invoice #</th>
+                  <th style={{ padding: "14px 16px", borderBottom: "2px solid rgba(255,255,255,0.1)", color: "#EAD7BB", fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>Date</th>
+                  <th style={{ padding: "14px 16px", borderBottom: "2px solid rgba(255,255,255,0.1)", color: "#EAD7BB", fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>Student Name</th>
+                  <th style={{ padding: "14px 16px", borderBottom: "2px solid rgba(255,255,255,0.1)", color: "#EAD7BB", fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>Class</th>
+                  <th style={{ padding: "14px 16px", borderBottom: "2px solid rgba(255,255,255,0.1)", color: "#EAD7BB", fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>Total</th>
+                  <th style={{ padding: "14px 16px", borderBottom: "2px solid rgba(255,255,255,0.1)", color: "#EAD7BB", fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>Status</th>
+                  <th style={{ padding: "14px 16px", borderBottom: "2px solid rgba(255,255,255,0.1)", color: "#EAD7BB", fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {receipts.map((r, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)", transition: "background 0.2s" }} onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "rgba(255,255,255,0.02)"; }} onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent"; }}>
+                    <td style={{ padding: "14px 16px", color: "rgba(255,255,255,0.9)" }}>{r.invoice_number}</td>
+                    <td style={{ padding: "14px 16px", color: "rgba(255,255,255,0.75)" }}>{formatDate(r.creation_date)}</td>
+                    <td style={{ padding: "14px 16px", fontWeight: "bold", color: "#ffffff" }}>{r.student_name}</td>
+                    <td style={{ padding: "14px 16px", color: "rgba(255,255,255,0.75)" }}>{r.student_class}</td>
+                    <td style={{ padding: "14px 16px", fontWeight: "bold", color: "#00F5D4" }}>₹{Number(r.grand_total).toFixed(2)}</td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <select 
+                        value={r.status || 'Pending'}
+                        onChange={(e) => handleStatusChange(r.id, e.target.value)}
+                        style={{ 
+                          padding: "6px 12px", 
+                          borderRadius: "8px", 
+                          outline: "none",
+                          fontSize: "12px",
+                          border: r.status === 'Verified' ? '1px solid rgba(39, 174, 96, 0.45)' : r.status === 'Disputed' ? '1px solid rgba(255, 107, 107, 0.45)' : '1px solid rgba(243, 156, 18, 0.45)',
+                          background: r.status === 'Verified' ? 'rgba(39, 174, 96, 0.2)' : r.status === 'Disputed' ? 'rgba(255, 107, 107, 0.2)' : 'rgba(243, 156, 18, 0.2)',
+                          color: r.status === 'Verified' ? '#2ecc71' : r.status === 'Disputed' ? '#ff6b6b' : '#f1c40f',
+                          fontWeight: "bold",
+                          cursor: "pointer"
+                        }}
+                      >
+                        <option value="Pending" style={{ background: "#113946", color: "#fff" }}>Pending</option>
+                        <option value="Verified" style={{ background: "#113946", color: "#fff" }}>Verified</option>
+                        <option value="Disputed" style={{ background: "#113946", color: "#fff" }}>Disputed</option>
+                      </select>
+                    </td>
+                    <td style={{ padding: "14px 16px", display: "flex", gap: "8px" }}>
+                      <button 
+                        onClick={() => setPreviewModalReceipt(r)}
+                        className="btn-warning btn-action-small"
+                        title="Preview"
+                        style={{ borderRadius: "6px" }}
+                      >
+                        👁️
+                      </button>
+                      <button 
+                        onClick={() => handleDownloadSingle(r)}
+                        className="btn-primary btn-action-small"
+                        title="Download PDF"
+                        style={{ borderRadius: "6px" }}
+                      >
+                        📄
+                      </button>
+                      <button 
+                        onClick={() => setEditReceipt({...r})}
+                        className="btn-success btn-action-small"
+                        title="Edit Basic Info"
+                        style={{ borderRadius: "6px" }}
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(r.id)}
+                        className="btn-danger btn-action-small"
+                        title="Delete"
+                        style={{ borderRadius: "6px" }}
+                      >
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

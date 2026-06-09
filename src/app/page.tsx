@@ -51,7 +51,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "120px 20px 100px 20px", textAlign: "center", position: "relative" }}>
+      <div className="hero-container" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "120px 20px 100px 20px", textAlign: "center", position: "relative" }}>
         
         {/* Decorative background blur */}
         <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "600px", height: "600px", background: "radial-gradient(circle, rgba(51,102,255,0.08) 0%, rgba(255,255,255,0) 70%)", zIndex: 0, pointerEvents: "none" }}></div>

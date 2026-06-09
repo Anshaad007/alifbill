@@ -917,12 +917,43 @@ table.invoice-table td {
     }
     
     /* Ensure all tables are horizontally scrollable on mobile */
-    table {
-        display: block;
-        max-width: 100%;
+    .table-container {
+        width: 100%;
         overflow-x: auto;
-        white-space: nowrap;
         -webkit-overflow-scrolling: touch;
+        margin-bottom: 20px;
+        border-radius: 8px;
+    }
+    
+    table {
+        min-width: 800px;
+    }
+
+    /* Dashboard Header Mobile Fixes */
+    .dashboard-header {
+        height: auto !important;
+        min-height: 70px;
+        padding: 12px 16px !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        align-items: stretch !important;
+        text-align: center !important;
+    }
+    .dashboard-header > div {
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+    }
+
+    /* Action Toolbar Mobile Fixes */
+    .quick-toolbar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        text-align: center !important;
+        padding: 15px !important;
+    }
+    .quick-toolbar > div {
+        justify-content: center !important;
+        flex-wrap: wrap !important;
     }
 
     /* Landing Page Specific Overrides */
